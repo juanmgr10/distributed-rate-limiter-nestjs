@@ -1,14 +1,23 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { RedisService } from './redis/redis.service';
 
 describe('AppController', () => {
   let appController: AppController;
 
   beforeEach(async () => {
+    const mockRedisService = {
+      ping: jest.fn().mockResolvedValue('PONG'),
+      checkHealth: jest.fn().mockResolvedValue({ status: 'ok', redis: 'OK' }),
+    };
+
     const app: TestingModule = await Test.createTestingModule({
       controllers: [AppController],
-      providers: [AppService],
+      providers: [
+        AppService,
+        { provide: RedisService, useValue: mockRedisService },
+      ],
     }).compile();
 
     appController = app.get<AppController>(AppController);
