@@ -84,4 +84,25 @@ export class FixedWindowAlgorithm implements RateLimitStorage {
       limit: config.maxRequests,
     };
   }
+
+  async getStatus(
+    identifier: string,
+    config: RateLimitConfig,
+  ): Promise<RateLimitResult> {
+    const now = Date.now();
+    const windowMs = config.windowMs;
+    const windowTimestamp = Math.floor(now / windowMs) * windowMs;
+    const key = `${config.keyPrefix}:${identifier}:${windowTimestamp}`;
+
+    // Lectura sin consumir: GET el contador actual (0 si no existe)
+    const count = (await this.redis.get(key)) ?? '0';
+    const resetTime = Math.floor((windowTimestamp + windowMs) / 1000);
+
+    return {
+      allowed: parseInt(count, 10) <= config.maxRequests,
+      remaining: Math.max(0, config.maxRequests - parseInt(count, 10)),
+      resetTime,
+      limit: config.maxRequests,
+    };
+  }
 }

@@ -42,4 +42,19 @@ export class RateLimiterService {
     }
     return algorithm.checkLimit(identifier, config);
   }
+
+  /**
+   * Consulta el estado actual del rate limit sin consumir una petición.
+   * Útil para endpoints de diagnóstico (ej: /rate-limit/status).
+   */
+  async getStatus(
+    identifier: string,
+    config: RateLimitConfig,
+  ): Promise<RateLimitResult> {
+    const algorithm = this.algorithms[config.algorithm];
+    if (!algorithm) {
+      throw new Error(`Algoritmo no soportado: ${config.algorithm}`);
+    }
+    return algorithm.getStatus(identifier, config);
+  }
 }

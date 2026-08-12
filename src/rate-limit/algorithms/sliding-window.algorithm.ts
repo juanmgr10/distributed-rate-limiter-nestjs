@@ -91,4 +91,23 @@ export class SlidingWindowAlgorithm implements RateLimitStorage {
       limit: config.maxRequests,
     };
   }
+
+  async getStatus(
+    identifier: string,
+    config: RateLimitConfig,
+  ): Promise<RateLimitResult> {
+    const now = Date.now();
+    const key = `${config.keyPrefix}:${identifier}:log`;
+    const minScore = now - config.windowMs;
+
+    // Solo lectura: contar entradas dentro de la ventana SIN añadir ninguna
+    const count = await this.redis.zcount(key, minScore, '+inf');
+
+    return {
+      allowed: count <= config.maxRequests,
+      remaining: Math.max(0, config.maxRequests - count),
+      resetTime: Math.floor((now + config.windowMs) / 1000),
+      limit: config.maxRequests,
+    };
+  }
 }

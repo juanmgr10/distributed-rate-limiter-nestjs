@@ -108,4 +108,43 @@ export class TokenBucketAlgorithm implements RateLimitStorage {
       limit: config.maxRequests,
     };
   }
+
+  async getStatus(
+    identifier: string,
+    config: RateLimitConfig,
+  ): Promise<RateLimitResult> {
+    const now = Date.now();
+    const key = `${config.keyPrefix}:${identifier}:bucket`;
+
+    const bucket = await this.redis.hmget(key, 'tokens', 'lastRefill');
+    const tokensRaw = bucket[0];
+    const lastRefillRaw = bucket[1];
+
+    // Si no existe el cubo, está lleno (maxRequests tokens disponibles)
+    if (tokensRaw === null) {
+      return {
+        allowed: true,
+        remaining: config.maxRequests,
+        resetTime: Math.floor((now + config.windowMs) / 1000),
+        limit: config.maxRequests,
+      };
+    }
+
+    // Calcular refill que habría ocurrido hasta ahora (sin escribir)
+    const tokens = parseFloat(tokensRaw);
+    const lastRefill = parseInt(lastRefillRaw ?? String(now), 10);
+    const refillRate = config.maxRequests / config.windowMs;
+    const elapsed = now - lastRefill;
+    const currentTokens = Math.min(
+      config.maxRequests,
+      tokens + elapsed * refillRate,
+    );
+
+    return {
+      allowed: currentTokens >= 1,
+      remaining: Math.floor(Math.max(0, currentTokens)),
+      resetTime: Math.floor((now + config.windowMs) / 1000),
+      limit: config.maxRequests,
+    };
+  }
 }
