@@ -1,4 +1,7 @@
-import { RateLimitConfig, RateLimitResult } from './rate-limit-config.interface';
+import {
+  RateLimitConfig,
+  RateLimitResult,
+} from './rate-limit-config.interface';
 
 /**
  * Contrato que debe cumplir TODO algoritmo de rate limiting.
@@ -18,6 +21,19 @@ export interface RateLimitStorage {
    * @returns           Resultado con allowed/remaining/resetTime/limit
    */
   checkLimit(
+    identifier: string,
+    config: RateLimitConfig,
+  ): Promise<RateLimitResult>;
+
+  /**
+   * Consulta el estado actual del rate limit para un cliente SIN consumir
+   * una petición. Se usa para endpoints de diagnóstico (ej: /rate-limit/status).
+   *
+   * @param identifier  Identificador único del cliente (IP, API key, etc.)
+   * @param config      Configuración del rate limit para esta ruta/cliente
+   * @returns           Resultado actual sin modificar el contador
+   */
+  getStatus(
     identifier: string,
     config: RateLimitConfig,
   ): Promise<RateLimitResult>;

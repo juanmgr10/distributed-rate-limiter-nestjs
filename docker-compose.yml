@@ -2,8 +2,10 @@ services:
   redis:
     image: redis:7-alpine
     container_name: rate-limit-redis
+    # Puerto 6380 en el host: el 6379 puede estar ocupado por un redis-server
+    # nativo del sistema. Dentro del contenedor Redis sigue en 6379.
     ports:
-      - "6379:6379"
+      - "6380:6379"
     volumes:
       - redis-data:/data
     command: redis-server --appendonly yes
